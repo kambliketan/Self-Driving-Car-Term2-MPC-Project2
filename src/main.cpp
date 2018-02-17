@@ -12,10 +12,6 @@
 // for convenience
 using json = nlohmann::json;
 
-size_t N = 10;
-double dt = 0.100; // 100 ms
-const double Lf = 2.67;
-
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
@@ -81,7 +77,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    // cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -109,13 +105,13 @@ int main() {
           double throttle_value;
 
           // waypoints need to be transformed to vehicle co-ordinate system:
-          auto ptsx_vehicle = VectorXd(ptsx.size());
-          auto ptsy_vehicle = VectorXd(ptsy.size());
+          auto ptsx_vehicle = Eigen::VectorXd(ptsx.size());
+          auto ptsy_vehicle = Eigen::VectorXd(ptsy.size());
 
-          for (int i = 0; i < ptsx.size(), i++)
+          for (unsigned int i = 0; i < ptsx.size(); i++)
           {
-            double dx = ptsx(i) - px;
-            double dy = ptsy(i) - py;
+            double dx = ptsx[i] - px;
+            double dy = ptsy[i] - py;
 
             ptsx_vehicle(i) = dx * cos(-1 * psi) - dy * sin(-1 * psi);
             ptsy_vehicle(i) = dx * sin(-1 * psi) + dy * cos(-1 * psi);
@@ -125,33 +121,36 @@ int main() {
           auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
 
           // The cross track error is calculated by evaluating at polynomial at x, f(x) and subtracting y.
-          double cte = coeffs[0]; // polyeval(coeffs, 0);     // polyeval(coeffs, x) - y;
+          // double cte = coeffs[0]; // polyeval(coeffs, 0);     // polyeval(coeffs, x) - y;
           
           // Due to the sign starting at 0, the orientation error is -f'(x).
           // derivative of coeffs[0] + coeffs[1] * x -> coeffs[1]
-          double epsi = -1 * atan(coeffs[1])    // psi - atan(coeffs[1]);
+          // double epsi = -1 * atan(coeffs[1]);    // psi - atan(coeffs[1]);
 
           // starting state values
-          double x_start = 0.0;
-          double y_start = 0.0;
-          double psi_start = 0.0;
-          double v_start = v;
-          double cte_start = cte;
-          double epsi_start = epsi;
+          double x_ini = 0.0;
+          double y_ini = 0.0;
+          double psi_ini = 0.0;
+          double v_ini = v;
+          double cte_ini = coeffs[0]; // cte;
+          double epsi_ini = -1 * atan(coeffs[1]); // epsi;
+
+          double delta_t = 0.100;
+          const double Lf_main = 2.67;
 
           // state, 1 step later:
-          double x_dt = x_start + v * cos(psi_start) * dt;  // v * dt
-          double y_dt = y_start + v * sin(psi_start) * dt;  // 0.0
-          double psi_dt = psi_start - (v / Lf) * delta * dt;
-          double v_dt = v_start + a * dt;
-          double cte_dt = cte_start + v * sin(psi_start) * dt;
-          double epsi_dt = epsi_start - (v / Lf) * atan(coeffs[1]) * dt;
+          double x_dt = x_ini + v * cos(psi_ini) * delta_t;  // v * delta_t
+          double y_dt = y_ini + v * sin(psi_ini) * delta_t;  // 0.0
+          double psi_dt = psi_ini - (v / Lf_main) * delta * delta_t;
+          double v_dt = v_ini + a * delta_t;
+          double cte_dt = cte_ini + v * sin(psi_ini) * delta_t;
+          double epsi_dt = epsi_ini - (v / Lf_main) * atan(coeffs[1]) * delta_t;
 
           // state
           Eigen::VectorXd state(6);
           state << x_dt, y_dt, psi_dt, v_dt, cte_dt, epsi_dt;
 
-          auto vars = MPC.Solve(state, coeffs);
+          auto vars = mpc.Solve(state, coeffs);
 
           steer_value = vars[0] / deg2rad(25);
           throttle_value = vars[1];
@@ -173,16 +172,10 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          for (int i = 2; i < vars.size(); i++)
+          for (unsigned int i = 3; i < vars.size(); i+=2)
           {
-            if (i % 2 == 0)
-            {
-              mpc_x_vals.push_back(vars[i]);
-            }
-            else
-            {
-              mpc_y_vals.push_back(vars[i]);
-            }
+            mpc_x_vals.push_back(vars[i - 1]);
+            mpc_y_vals.push_back(vars[i]);
           }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
@@ -195,9 +188,9 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           
-          for (int i = 0; i < 20; i++)
+          for (int i = 0; i < 30; i++)
           {
-            double next_x_val = 2.5 * i;
+            double next_x_val = 3 * i;
             next_x_vals.push_back(next_x_val);
             next_y_vals.push_back(polyeval(coeffs, next_x_val));
           }
@@ -210,7 +203,7 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          // std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.

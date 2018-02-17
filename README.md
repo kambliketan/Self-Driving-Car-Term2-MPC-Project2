@@ -3,6 +3,94 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
+## Hyperparameter Tuning
+
+- We can tune following hyper parameters:
+  1. N - the number of timesteps 
+  2. dt - the time between actuations
+  3. importance weights - to be applied to each type of cost.
+
+- I started with N = 10 and dt = 100 ms as that is the latecy. 
+- With all importance weights set to 1, I saw that the vehicle makes forward progress but tries very hard to correct it's trajectory with drastic steering movements between consecutive steps. And then soon falls off trajectory.
+- Thus I tried increasing weigh to be applied to cost associated with drastic steering angle changes (see `weight_steer_cost`). This seemed to help a lot. I incrementally increased it from 10 to 100. At which point the vehicle could complete the trajectory without any issues.
+- With reference velocity set to 40, with weight set to 1, I saw velocity changing from 35 - 42 so did not see need to tune the weight.
+
+## Description
+
+Kinematic model (see `main.cpp` lines `142` to `147`)
+
+- ignore gravity and tire forces
+- dynamic models are more elaborate and hence complex to implement
+- model = state + actuator inputs
+- defines how future state changes over time based on previous state and current actuator inputs
+
+- x2 = x1 + v*cos(psi)*dt
+- y2 = y1 + v*sin(psi)*dt
+- psi2 = psi1 + (v/Lf)*steering_angle*dt
+- v2 = v1 + acceleration * dt
+
+- Lf measures the distance between the center of mass of the vehicle and it's front axle. The larger the vehicle, the slower the turn rate.
+- If you've driven a vehicle you're well aware at higher speeds you turn quicker than at lower speeds. This is why vv is the included in the update.
+
+State
+
+- x, y, psi, velocity
+
+Actuator commands
+
+- steering_angle and acceleration
+- acceleration is [-1, 1]
+
+Fit
+
+- Reference trajectory that the path planning system sends to Controller is typically a 3rd order polynomial.
+- we will need to fit 3rd order polynomial to waypoints(x, y)
+
+Cost (see `MPC.cpp` lines `60` to `79`)
+
+- difference between reference trajectory (where you want vehivle to go) and actual vehicle path (prediction based on model and current state i.e where you think vehicle will actually go)
+- [cte, e_psi] i.e cross_track_error and orientation_error can be added to state itself to track it over time
+
+- cte2 = cte1 + v*cos(e_psi1)*dt
+- e_psi2 = e_psi1 + (v/Lf)*steering_angle*dt
+
+- Just cte and e_psi is not enough because then the vehicle might decide to stop or consecutive actuator inputs might differ drastically. Both of which is not practical. So we need to enhance the cost function.
+- penalize for not maintaining reference velocity: cost += pow(v - 35, 2)
+- another option is to add eucledean distance between vehicle and destination to the cost so that the vehicle keeps going.
+
+- penalize drastic changes in actuator inputs: steering angle or accelaration so that the changes get smoothed out
+- penalize just the magnitude: cost += pow(steering_angle, 2)
+- penalize rate of change: cost += pow(steering_angle2, 2) - pow(steering_angle1, 2)
+
+Model Predictive Control (see `MPC.cpp` class `MPC`)
+
+- Represent the task of following a trajectory as an optimization problem
+- involves simulating different actuator inputs, predict resulting trajectory and selecting trajectory with minimum cost
+
+- initialize with current state and referrence trajectory we want to follow
+-- optimize actuator inputs to each step in time in order to minimize cost of predicted trajectory
+-- i.e. constantly calculate inputs over future horizon
+
+- N is the number of timesteps in the horizon. dt is how much time elapses between actuations
+- prediction horizon T = N * dt
+- Thus the Control input vector that the MPC tries to optimize looks like this: [steering_angle1, acceleration1, steering_angle2, acceleration2, ... steering_angle_N-1, acceleration_N-1]
+
+- Keep dt to minimum to avoid discretization error
+
+- Putting it all together, the MPC involves-
+1. solver: defining hyperparameters: N, dt, T.
+2. solver: defining model
+3. solver: defining contraints
+4. solver: defining cost function
+5. put the initial state through the solver, which returns control inputs that minimizes the cost function.
+  - Fit polynomial to waypoints
+  - calculate initial cte and e_psi
+  - define components of cost function.
+  - define constraints
+6. apply first control input to the vehicle and then go to step 5.
+
+- MPC can deal with latency much more effectively, by explicitly taking it into account, than a PID controller.
+
 ## Dependencies
 
 * cmake >= 3.5

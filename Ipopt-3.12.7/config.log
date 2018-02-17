@@ -27,54 +27,12 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
-PATH: /home/ketan/bin
-PATH: /home/ketan/.local/bin
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
 PATH: /usr/sbin
 PATH: /usr/bin
 PATH: /sbin
 PATH: /bin
-PATH: /usr/games
-PATH: /usr/local/games
-PATH: /mnt/c/Program Files (x86)/Intel/iCLS Client
-PATH: /mnt/c/Program Files/Intel/iCLS Client
-PATH: /mnt/c/Windows/System32
-PATH: /mnt/c/Windows
-PATH: /mnt/c/Windows/System32/wbem
-PATH: /mnt/c/Windows/System32/WindowsPowerShell/v1.0
-PATH: /mnt/c/Program Files (x86)/Intel/Intel(R) Management Engine Components/DAL
-PATH: /mnt/c/Program Files/Intel/Intel(R) Management Engine Components/DAL
-PATH: /mnt/c/Program Files (x86)/Intel/Intel(R) Management Engine Components/IPT
-PATH: /mnt/c/Program Files/Intel/Intel(R) Management Engine Components/IPT
-PATH: /mnt/c/Program Files (x86)/Common Files/LENOVO/easyplussdk/bin
-PATH: /mnt/c/Program Files/Microsoft DNX/Dnvm
-PATH: /mnt/c/Program Files/MongoDB/Server/3.2/bin
-PATH: /mnt/c/Python27
-PATH: /mnt/c/Python27/Scripts
-PATH: /mnt/c/Anaconda2
-PATH: /mnt/c/Anaconda2/Scripts
-PATH: /mnt/c/Anaconda2/Library/bin
-PATH: /mnt/c/Go/bin
-PATH: /mnt/c/Program Files (x86)/Microsoft VS Code/bin
-PATH: /mnt/c/Users/ketan/AppData/Local/Microsoft/WindowsApps
-PATH: /mnt/c/Users/ketan/AppData/Roaming/npm
-PATH: /mnt/c/adb
-PATH: /mnt/c/Program Files (x86)/Skype/Phone
-PATH: /mnt/c/Program Files/nodejs
-PATH: /mnt/c/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin
-PATH: /mnt/c/Program Files/PuTTY
-PATH: /mnt/c/Program Files/dotnet
-PATH: /mnt/c/Program Files/Microsoft SQL Server/130/Tools/Binn
-PATH: /mnt/c/Program Files/Git/cmd
-PATH: /mnt/c/HashiCorp/Vagrant/bin
-PATH: /mnt/c/Windows/System32
-PATH: /mnt/c/Windows
-PATH: /mnt/c/Windows/System32/wbem
-PATH: /mnt/c/Windows/System32/WindowsPowerShell/v1.0
-PATH: /mnt/c/Program Files/Intel/WiFi/bin
-PATH: /mnt/c/Program Files/Common Files/Intel/WirelessCommon
-PATH: /mnt/c/Program Files (x86)/Nmap
 PATH: /snap/bin
 
 
@@ -811,7 +769,10 @@ configure:23357: configuring in ThirdParty/ASL
 configure:23474: running /bin/bash './configure' --prefix=/usr/local  '--prefix=/usr/local' 'coin_skip_warn_cxxflags=yes' '--with-blas=/usr/local/lib/libcoinblas.a -lgfortran' '--with-lapack=/usr/local/lib/libcoinlapack.a' --cache-file=/dev/null --srcdir=.
 configure:23357: configuring in ThirdParty/Mumps
 configure:23474: running /bin/bash './configure' --prefix=/usr/local  '--prefix=/usr/local' 'coin_skip_warn_cxxflags=yes' '--with-blas=/usr/local/lib/libcoinblas.a -lgfortran' '--with-lapack=/usr/local/lib/libcoinlapack.a' --cache-file=/dev/null --srcdir=.
-configure:23479: error: /bin/bash './configure' failed for ThirdParty/Mumps
+configure:23357: configuring in Ipopt
+configure:23474: running /bin/bash './configure' --prefix=/usr/local  '--prefix=/usr/local' 'coin_skip_warn_cxxflags=yes' '--with-blas=/usr/local/lib/libcoinblas.a -lgfortran' '--with-lapack=/usr/local/lib/libcoinlapack.a' --cache-file=/dev/null --srcdir=.
+configure:23543: In case of trouble, first consult the troubleshooting page at https://projects.coin-or.org/BuildTools/wiki/user-troubleshooting
+configure:23549: Main configuration of Ipopt successful
 
 ## ---------------- ##
 ## Cache variables. ##
@@ -1098,4 +1059,30 @@ subdirs=' ThirdParty/ASL ThirdParty/Mumps Ipopt'
 sysconfdir='${prefix}/etc'
 target_alias=''
 
-configure: exit 1
+## ----------- ##
+## confdefs.h. ##
+## ----------- ##
+
+#define HAVE_DLFCN_H 1
+#define HAVE_INTTYPES_H 1
+#define HAVE_MEMORY_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_STDLIB_H 1
+#define HAVE_STRINGS_H 1
+#define HAVE_STRING_H 1
+#define HAVE_SYS_STAT_H 1
+#define HAVE_SYS_TYPES_H 1
+#define HAVE_UNISTD_H 1
+#define PACKAGE "ipopt"
+#define PACKAGE_BUGREPORT "http://projects.coin-or.org/Ipopt/newticket"
+#define PACKAGE_NAME "Ipopt"
+#define PACKAGE_STRING "Ipopt 3.12.7"
+#define PACKAGE_TARNAME "ipopt"
+#define PACKAGE_VERSION "3.12.7"
+#define STDC_HEADERS 1
+#define VERSION "3.12.7"
+#endif
+#ifdef __cplusplus
+extern "C" void exit (int) throw ();
+
+configure: exit 0
