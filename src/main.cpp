@@ -12,6 +12,10 @@
 // for convenience
 using json = nlohmann::json;
 
+size_t N = 10;
+double dt = 0.100; // 100 ms
+const double Lf = 2.67;
+
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
@@ -92,14 +96,72 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
+
           /*
-          * TODO: Calculate steering angle and throttle using MPC.
+          * TODO: [Done] Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
           double steer_value;
           double throttle_value;
+
+          // waypoints need to be transformed to vehicle co-ordinate system:
+          auto ptsx_vehicle = VectorXd(ptsx.size());
+          auto ptsy_vehicle = VectorXd(ptsy.size());
+
+          for (int i = 0; i < ptsx.size(), i++)
+          {
+            double dx = ptsx(i) - px;
+            double dy = ptsy(i) - py;
+
+            ptsx_vehicle(i) = dx * cos(-1 * psi) - dy * sin(-1 * psi);
+            ptsy_vehicle(i) = dx * sin(-1 * psi) + dy * cos(-1 * psi);
+          }
+
+          // fitting 3rd order polynomial to the waypoints:
+          auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
+
+          // The cross track error is calculated by evaluating at polynomial at x, f(x) and subtracting y.
+          double cte = coeffs[0]; // polyeval(coeffs, 0);     // polyeval(coeffs, x) - y;
+          
+          // Due to the sign starting at 0, the orientation error is -f'(x).
+          // derivative of coeffs[0] + coeffs[1] * x -> coeffs[1]
+          double epsi = -1 * atan(coeffs[1])    // psi - atan(coeffs[1]);
+
+          // starting state values
+          double x_start = 0.0;
+          double y_start = 0.0;
+          double psi_start = 0.0;
+          double v_start = v;
+          double cte_start = cte;
+          double epsi_start = epsi;
+
+          // state, 1 step later:
+          double x_dt = x_start + v * cos(psi_start) * dt;  // v * dt
+          double y_dt = y_start + v * sin(psi_start) * dt;  // 0.0
+          double psi_dt = psi_start - (v / Lf) * delta * dt;
+          double v_dt = v_start + a * dt;
+          double cte_dt = cte_start + v * sin(psi_start) * dt;
+          double epsi_dt = epsi_start - (v / Lf) * atan(coeffs[1]) * dt;
+
+          // state
+          Eigen::VectorXd state(6);
+          state << x_dt, y_dt, psi_dt, v_dt, cte_dt, epsi_dt;
+
+          auto vars = MPC.Solve(state, coeffs);
+
+          steer_value = vars[0] / deg2rad(25);
+          throttle_value = vars[1];
+
+          // Both are in between [-1, 1]
+          steer_value = std::max(steer_value, -1.0);
+          steer_value = std::min(steer_value, 1.0);
+
+          throttle_value = std::max(throttle_value, -1.0);
+          throttle_value = std::min(throttle_value, 1.0);
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -111,6 +173,18 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
+          for (int i = 2; i < vars.size(); i++)
+          {
+            if (i % 2 == 0)
+            {
+              mpc_x_vals.push_back(vars[i]);
+            }
+            else
+            {
+              mpc_y_vals.push_back(vars[i]);
+            }
+          }
+
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
@@ -120,6 +194,13 @@ int main() {
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
+          
+          for (int i = 0; i < 20; i++)
+          {
+            double next_x_val = 2.5 * i;
+            next_x_vals.push_back(next_x_val);
+            next_y_vals.push_back(polyeval(coeffs, next_x_val));
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
