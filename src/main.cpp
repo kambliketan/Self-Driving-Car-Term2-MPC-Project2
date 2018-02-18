@@ -135,16 +135,16 @@ int main() {
           double cte_ini = coeffs[0]; // cte;
           double epsi_ini = -1 * atan(coeffs[1]); // epsi;
 
-          double delta_t = 0.100;
+          double latency = 0.100;   // 100 ms
           const double Lf_main = 2.67;
 
-          // state, 1 step later:
-          double x_dt = x_ini + v * cos(psi_ini) * delta_t;  // v * delta_t
-          double y_dt = y_ini + v * sin(psi_ini) * delta_t;  // 0.0
-          double psi_dt = psi_ini - (v / Lf_main) * delta * delta_t;
-          double v_dt = v_ini + a * delta_t;
-          double cte_dt = cte_ini + v * sin(psi_ini) * delta_t;
-          double epsi_dt = epsi_ini - (v / Lf_main) * atan(coeffs[1]) * delta_t;
+          // state, predicted after time interval = latecy:
+          double x_dt = x_ini + v * cos(psi_ini) * latency;  // v * latency
+          double y_dt = y_ini + v * sin(psi_ini) * latency;  // 0.0
+          double psi_dt = psi_ini - (v / Lf_main) * delta * latency;
+          double v_dt = v_ini + a * latency;
+          double cte_dt = cte_ini + v * sin(psi_ini) * latency;
+          double epsi_dt = epsi_ini + (v / Lf_main) * delta * latency;
 
           // state
           Eigen::VectorXd state(6);
